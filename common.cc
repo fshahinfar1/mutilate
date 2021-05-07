@@ -401,10 +401,10 @@ void print_stats(ConnectionStats &stats, double boot_time, double peak_qps) {
     }
 #else
     for (auto i: stats.get_sampler.samples) {
-      fprintf(file, "%d %f %f %s(%ld)\n", i.port, i.start_time - boot_time, i.time(), i.type == Operation::GET ? "GET" : (i.type == Operation::SET ? "SET" : "UNK"), i.key.size());
+      fprintf(file, "%d %f %f %s(%ld) VAL-SZ(%ld)\n", i.port, i.start_time - boot_time, i.time(), i.type == Operation::GET ? "GET" : (i.type == Operation::SET ? "SET" : "UNK"), i.key.size(), i.value_size);
     }
     for (auto i: stats.set_sampler.samples) {
-      fprintf(file, "%d %f %f %s(%ld)\n", i.port, i.start_time - boot_time, i.time(), i.type == Operation::GET ? "GET" : (i.type == Operation::SET ? "SET" : "UNK"), i.key.size());
+      fprintf(file, "%d %f %f %s(%ld) VAL-SZ(%ld)\n", i.port, i.start_time - boot_time, i.time(), i.type == Operation::GET ? "GET" : (i.type == Operation::SET ? "SET" : "UNK"), i.key.size(), i.value_size);
     }
 #endif
   }

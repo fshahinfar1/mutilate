@@ -19,6 +19,7 @@ public:
 
   string key;
   // string value;
+  uint64_t value_size;
 
   double time() const { return (end_time - start_time) * 1000000; }
 

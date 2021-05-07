@@ -403,6 +403,7 @@ void TCPConnection::read_callback() {
   Operation *op = NULL;
   int length;
   size_t n_read_out;
+  size_t op_value_size = 0;
 
   double now;
 
@@ -464,6 +465,9 @@ void TCPConnection::read_callback() {
 #else
         op->end_time = now;
 #endif
+        // (Farbod) Kepp value size of op
+        op->value_size = 0;
+        op_value_size = 0;
 
         stats.log_get(*op);
 
@@ -495,6 +499,8 @@ void TCPConnection::read_callback() {
         // FIXME: Actually parse the value?  Right now we just drain it.
         evbuffer_drain(input, data_length + 2);
         read_state = WAITING_FOR_END;
+        // (Farbod) Keeping op value size
+        op_value_size += data_length + 2;
 
         stats.rx_bytes += data_length + 2;
       } else {
@@ -507,6 +513,9 @@ void TCPConnection::read_callback() {
       if (buf == NULL) return; // Haven't received a whole line yet. Punt.
 
       stats.rx_bytes += n_read_out;
+      // (Farbod) Keeping op value size
+      op_value_size += data_length + 2;
+
 
       if (!strcmp(buf, "END")) {
 #if USE_CACHED_TIME
@@ -519,6 +528,10 @@ void TCPConnection::read_callback() {
 #else
         op->end_time = now;
 #endif
+
+        // (Farbod) Set op value size
+        op->value_size = op_value_size;
+        op_value_size = 0;
 
         stats.log_get(*op);
 
@@ -557,6 +570,11 @@ void TCPConnection::read_callback() {
 #else
       op->end_time = now;
 #endif
+
+      // (Farbod) What should be the value for Set ?
+      // TODO: ...
+      op->value_size = 0;
+      op_value_size = 0;
 
       stats.log_set(*op);
 
