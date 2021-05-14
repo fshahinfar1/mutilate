@@ -166,9 +166,11 @@ void agent() {
     all_connections.clear();
 
     go(servers, options, stats, &socket);
-    double peak_qps = 0.0;
-    peak_qps = stats.get_qps();
-    print_stats(stats, boot_time, peak_qps);
+    if (options.should_sample) {
+      double peak_qps = 0.0;
+      peak_qps = stats.get_qps();
+      print_stats(stats, boot_time, peak_qps);
+    }
   }
 }
 
@@ -719,11 +721,16 @@ void do_mutilate(const vector<string>& servers, options_t& options,
     if (args.src_port_given)
       assert((unsigned) conns <= src_ports.size());
 
+    bool sampling = true;
+    if (args.agentmode_given && !options.should_sample)
+      sampling = false;
+    if (sampling) {
+      printf("Agent sampling is enabled!\n");
+    }
     for (int c = 0; c < conns; c++) {
       int src_port = args.src_port_given ? src_ports[c] : 0;
       TCPConnection* conn = new TCPConnection(base, evdns, hostname, port, options,
-                                        src_port, args.agentmode_given ? false :
-                                        true);
+                                        src_port, sampling);
       connections.push_back(conn);
       if (c == 0) server_lead.push_back(conn);
     }

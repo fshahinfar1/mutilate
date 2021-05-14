@@ -533,6 +533,7 @@ void args_to_options(options_t* options) {
     strncpy(options->save_arg, args.save_arg, sizeof(options->save_arg));
   else
     strcpy(options->save_arg, "");
+  options->should_sample = args.agent_sampling_given;
 }
 
 static struct {

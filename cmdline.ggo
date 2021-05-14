@@ -86,6 +86,8 @@ option "scan-search" - "Scan latency and search for the QPS. (i.e. \
 option "src-port" - "A list of IP source ports to use in order to achieve \
 desired RSS queue distribution." string multiple
 option "popularity" - "Key popularity distribution." string default="uniform"
+option "agent-sampling" - "each agent will sample connection stats and \
+if `save` argument has been given it is also is applied to agents" flag off
 
 text "\nAgent-mode options:"
 option "agentmode" A "Run client in agent mode."
