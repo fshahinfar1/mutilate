@@ -524,6 +524,10 @@ void args_to_options(options_t* options) {
   options->oob_thread = false;
   options->skip = args.skip_given;
   options->moderate = args.moderate_given;
+  if (args.save_given)
+    strncpy(options->save_arg, args.save_arg, sizeof(options->save_arg));
+  else
+    strcpy(options->save_arg, "");
 }
 
 static struct {

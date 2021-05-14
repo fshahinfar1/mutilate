@@ -88,6 +88,8 @@ typedef struct {
 
   struct qps_function_info qps_function;
   bool scan_search_enabled;
+  char save_arg[80];
+
 } options_t;
 
 #endif // CONNECTIONOPTIONS_H
