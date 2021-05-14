@@ -500,7 +500,7 @@ void TCPConnection::read_callback() {
         evbuffer_drain(input, data_length + 2);
         read_state = WAITING_FOR_END;
         // (Farbod) Keeping op value size
-        op_value_size += data_length + 2;
+        op_value_size += data_length;// + 2;
 
         stats.rx_bytes += data_length + 2;
       } else {
@@ -514,7 +514,7 @@ void TCPConnection::read_callback() {
 
       stats.rx_bytes += n_read_out;
       // (Farbod) Keeping op value size
-      op_value_size += data_length + 2;
+      // op_value_size += n_read_out;
 
 
       if (!strcmp(buf, "END")) {
