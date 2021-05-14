@@ -412,6 +412,7 @@ void print_stats(ConnectionStats &stats, double boot_time, double peak_qps) {
       fprintf(file, "%d %f %f %s(%ld) VAL-SZ(%ld)\n", i.port, i.start_time - boot_time, i.time(), i.type == Operation::GET ? "GET" : (i.type == Operation::SET ? "SET" : "UNK"), i.key.size(), i.value_size);
     }
 #endif
+    fclose(file);
   }
 }
 
