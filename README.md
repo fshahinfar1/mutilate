@@ -139,6 +139,8 @@ Command-line Options
                                       (default=`30')
       -V, --valuesize=STRING        Length of memcached values (distribution).
                                       (default=`200')
+      -G, --getcount=STRING         Number of gets in multiget (distribution).
+                                      (default=`1')
       -r, --records=INT             Number of memcached records to use.  If
                                       multiple memcached servers are given, this
                                       number is divided by the number of servers.
@@ -189,6 +191,30 @@ Command-line Options
                                       QPS where 95% of requests are faster than
                                       1000us).
           --scan=min:max:step       Scan latency across QPS rates from min to max.
+          --report-stats=interval   Report statistics every interval seconds. By
+                                      default, report at the end of the benchmark.
+          --qps-function=STRING     Adjust the target QPS during the benchmark
+                                      according to the given function.
+          --qps-warmup=time[:rate]  Warmup at given rate or rate QPS_function(t=0)
+                                      for the given number of seconds.
+          --stop-latency=N:X        Stop scanning when N-order statistic > Xus.
+                                      (i.e. --stop-latency 95:1000 means stop
+                                      scanning when 95% of requests are slower than
+                                      1000us).
+          --scan-search=STRING      Scan latency and search for the QPS. (i.e.
+                                      --scan-search 95:1000,20:10:100,500:50 means
+                                      scan from 20KQPS to 100KQPS in
+                                      10KQPS steps and then in 500KQPS steps while
+                                      95% of requests are faster than
+                                      1000us, then go back one step, and do 50KPQS
+                                      steps).
+          --src-port=STRING         A list of IP source ports to use in order to
+                                      achieve desired RSS queue distribution.
+          --popularity=STRING       Key popularity distribution.
+                                      (default=`uniform')
+          --agent-sampling          each agent will sample connection stats and if
+                                      `save` argument has been given it is also is
+                                      applied to agents  (default=off)
     
     Agent-mode options:
       -A, --agentmode               Run client in agent mode.
@@ -201,6 +227,12 @@ Command-line Options
       -Q, --measure_qps=INT         Explicitly set master client QPS, spread across
                                       threads and connections.
       -D, --measure_depth=INT       Set master client connection depth.
+    
+    DPDK options:
+          --my-mac=STRING           The MAC address of the agent.
+          --my-ip=STRING            The IP address of the agent.
+          --server-mac=STRING       The MAC address of the server.
+          --cpu-core=INT            The CPU core to run the agent on.
     
     The --measure_* options aid in taking latency measurements of the
     memcached server without incurring significant client-side queuing
@@ -232,4 +264,14 @@ Command-line Options
     
     [1] Berk Atikoglu et al., Workload Analysis of a Large-Scale Key-Value Store,
         SIGMETRICS 2012
+    
+    The following QPS functions are supported:
+    
+       triangle:min:max:period:maxhold          Triangle wave.
+       qtriangle:min:max:period:step            Quantized triangle wave.
+       sin_noise:min:max:period:namp:nupdate    Sine wave plus noise.
+    
+    The following popularity distributions are supported:
+       uniform                      Uniform distribution.
+       zipf:<theta>                 Zipf distribution.
     
