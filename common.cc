@@ -72,6 +72,11 @@ void init_agent(zmq::socket_t &socket, options_t &options, vector<string> &serve
 
   V("lambda_denom = %d, lambda = %f, qps = %d",
     options.lambda_denom, options.lambda, options.qps);
+
+  if (strnlen(options.save_arg, sizeof(options.save_arg))) {
+    args.save_given = 1;
+    strncpy(args.save_arg, options.save_arg, sizeof(options.save_arg));
+  }
 }
 
 void prep_agent(const vector<string>& servers, options_t& options) {

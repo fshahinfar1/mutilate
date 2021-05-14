@@ -166,6 +166,7 @@ void agent() {
     all_connections.clear();
 
     go(servers, options, stats, &socket);
+    double peak_qps = 0.0;
     peak_qps = stats.get_qps();
     print_stats(stats, boot_time, peak_qps);
   }
