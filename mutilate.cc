@@ -133,7 +133,7 @@ void* thread_main(void *arg);
  * All clients spawn threads, open connections, load the DB, and wait
  * for all connections to become IDLE.  Following that, they
  * synchronize and finally do the heavy lifting.
- * 
+ *
  * [IF WARMUP] -1:  Master <-> Agent: Synchronize
  * [IF WARMUP]  0:  Everyone: RUN for options.warmup seconds.
  * 1. Master <-> Agent: Synchronize
@@ -157,6 +157,7 @@ void agent() {
     options_t options;
     vector<string> servers;
     init_agent(socket, options, servers);
+    boot_time = options.master_boot_time;
 
     //    if (options.threads > 1)
       pthread_barrier_init(&barrier, NULL, options.threads);
@@ -353,7 +354,9 @@ int main(int argc, char **argv) {
   if (!args.server_given && !args.agentmode_given)
     DIE("--server or --agentmode must be specified.");
 
-  // TODO: Discover peers, share arguments.
+  if (args.agent_sampling_given) {
+    printf("Agent sampling is on make sure machies clocks are in sync\n");
+  }
 
   init_random_stuff();
   boot_time = get_time();
@@ -380,6 +383,7 @@ int main(int argc, char **argv) {
   qps_function_init(&options);
   scan_search_init(&options);
   args_to_options(&options);
+  options.master_boot_time = boot_time;
 
   pthread_barrier_init(&barrier, NULL, options.threads);
 
@@ -490,7 +494,7 @@ int main(int argc, char **argv) {
       stats.print_stats("read", stats.get_sampler, false);
       printf(" %8.1f", stats.get_qps());
       printf(" %8d\n", q);
-    }    
+    }
   } else {
     go(servers, options, stats);
   }
@@ -498,7 +502,7 @@ int main(int argc, char **argv) {
   if (!args.scan_given && !args.loadonly_given)
     print_stats(stats, boot_time, peak_qps);
 
-  //  if (args.threads_arg > 1) 
+  //  if (args.threads_arg > 1)
     pthread_barrier_destroy(&barrier);
 
 #ifdef HAVE_LIBZMQ
@@ -638,7 +642,7 @@ void go(const vector<string>& servers, options_t& options,
 
     V("Local QPS = %.1f (%d / %.1fs)",
       total / (stats.stop - stats.start),
-      total, stats.stop - stats.start);    
+      total, stats.stop - stats.start);
 
     finish_agent(stats);
   }

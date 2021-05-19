@@ -90,6 +90,7 @@ typedef struct {
   bool scan_search_enabled;
   char save_arg[80];
   bool should_sample;
+  double master_boot_time;
 } options_t;
 
 #endif // CONNECTIONOPTIONS_H

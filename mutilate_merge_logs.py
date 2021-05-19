@@ -13,7 +13,9 @@ def shell(cmd):
 
 
 def main():
+    notice()
     argv = sys.argv
+    script_dir = os.path.basedir(argv[0])
     save_path = ''
     agents = []
     base = './tmp/'
@@ -31,7 +33,7 @@ def main():
     pprint(agents)
     print('Log file location:', save_path)
 
-    cmd = ['./mutilate']
+    cmd = [os.path.join(script_dir, 'mutilate')]
     cmd += argv[1:]
     print ('CMD:', cmd)
     p = subprocess.run(cmd)
@@ -64,9 +66,14 @@ def main():
     # Merge files and sort
     cmd = 'cat {base}/_*.txt > {base}/result.txt'.format(base=base)
     shell(cmd)
-    cmd = 'sort {base}/result.txt > {base}/sres.txt'.format(base=base)
+    cmd = 'sort -k2 -n {base}/result.txt > {base}/sres.txt'.format(base=base)
     shell(cmd)
     print('Done')
+
+
+def notice():
+    print("\tIf using multi-node trace gathering then make sure\n"
+            "\tthe clock of machines are in sync")
 
 
 if __name__ == '__main__':

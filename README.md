@@ -20,7 +20,7 @@ out compatibility over time.
 Building
 ========
 
-    apt-get install scons libevent-dev gengetopt libzmq-dev
+    sudo apt-get install scons libevent-dev gengetopt libzmq3-dev
     scons
 
 Basic Usage
