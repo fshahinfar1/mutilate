@@ -195,7 +195,8 @@ int main(int argc, char **argv)
 	srand48(boot_time * 1000000);
 
 	if (args.server_given) {
-		assert(args.binary_given);
+		// Farbod: I need to implement non-binary protocol support for upd
+		// assert(args.binary_given);
 		assert(args.connections_given);
 		assert(args.measure_connections_given);
 		assert(args.noload_given);
