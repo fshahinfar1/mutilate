@@ -644,6 +644,10 @@ void go(const vector<string>& servers, options_t& options,
       total / (stats.stop - stats.start),
       total, stats.stop - stats.start);
 
+    V("Local Issued Gets = %.1f (%ld / %.1fs)",
+      stats.issue_gets / (stats.stop - stats.start),
+      stats.issue_gets, stats.stop - stats.start);
+
     finish_agent(stats);
   }
 #endif
