@@ -29,7 +29,8 @@ class ConnectionStats {
    get_sampler(200), set_sampler(200), op_sampler(100),
 #endif
    rx_bytes(0), tx_bytes(0), gets(0), sets(0),
-   get_misses(0), skips(0), retransmits(0), sampling(_sampling) {}
+   get_misses(0), skips(0), retransmits(0), issue_gets(0),
+   sampling(_sampling) {}
 
 #ifdef USE_ADAPTIVE_SAMPLER
   AdaptiveSampler<Operation> get_sampler;
@@ -49,6 +50,9 @@ class ConnectionStats {
   uint64_t gets, sets, get_misses;
   uint64_t skips;
   uint64_t retransmits;
+  // Farbod: added this to count number of issued get requets.
+  // I hope to use it for measuring the generated load on the server.
+  uint64_t issue_gets;
 
   double start, stop;
 
@@ -108,6 +112,8 @@ class ConnectionStats {
     skips += cs.skips;
     retransmits += cs.retransmits;
 
+    issue_gets += cs.issue_gets;
+
     start = cs.start;
     stop = cs.stop;
   }
@@ -120,6 +126,7 @@ class ConnectionStats {
     get_misses += as.get_misses;
     skips += as.skips;
     retransmits += as.retransmits;
+    issue_gets += as.issue_gets;
   }
 
   void substract(const ConnectionStats &cs) {

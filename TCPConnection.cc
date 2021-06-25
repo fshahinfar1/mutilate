@@ -143,6 +143,7 @@ void TCPConnection::issue_get(const char* key, double now) {
     bufferevent_write(bev, &h, 24); // size does not include extras
     bufferevent_write(bev, key, keylen);
     l = 24 + keylen;
+    stats.issue_gets++;
   } else {
     string reqval = string("get ");
     reqval += string(key);
@@ -154,6 +155,7 @@ void TCPConnection::issue_get(const char* key, double now) {
     }
     reqval += "\r\n";
     l = evbuffer_add_printf(bufferevent_get_output(bev), "%s", reqval.c_str());
+    stats.issue_gets++;
   }
 
   if (read_state != LOADING) stats.tx_bytes += l;

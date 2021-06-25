@@ -8,6 +8,7 @@ public:
   uint64_t gets, sets, get_misses;
   uint64_t skips;
   uint64_t retransmits;
+  uint64_t issue_gets;
 
   double start, stop;
 };

@@ -373,6 +373,11 @@ void print_stats(ConnectionStats &stats, double boot_time, double peak_qps) {
          total / (stats.stop - stats.start),
          total, stats.stop - stats.start);
 
+
+  printf("\nTotal Issued Gets = %.1f (%ld / %.1fs)\n",
+         stats.issue_gets / (stats.stop - stats.start),
+         stats.issue_gets, stats.stop - stats.start);
+
   if (args.search_given && peak_qps > 0.0)
     printf("Peak QPS  = %.1f\n", peak_qps);
 
@@ -451,6 +456,7 @@ void* agent_stats_thread(void *arg) {
       as.get_misses += conn->stats.get_misses;
       as.skips += conn->stats.skips;
       as.retransmits += conn->stats.retransmits;
+      as.issue_gets += conn->stats.issue_gets;
     }
 
     zmq::message_t reply(sizeof(as));
