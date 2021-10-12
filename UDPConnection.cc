@@ -147,43 +147,45 @@ void UDPConnection::read_callback()
           int state = VALUE;  
           bool fail = false;
           int value_len = 0;
-          while  (s < data_len && !fail) {
+          while (s < data_len && !fail) {
             // printf("%d %d\n", s, data_len);
             int e;
             for (e = s; e < data_len - 1; e++) {
               if (data[e] != '\r')
                 continue;
               if (data[e] == '\r' && data[e+1] == '\n') {
-                // End of line
-                // do not care about \r
-                data[e] = '\0';
-                data[e+1] = '\0';
-                int line_len = e - s; 
+                // int line_len = e - s;
+                // printf("line rate: %d state: %d\n", line_len, state);
                 // States .........
                 if (state == VALUE) {
                   if (!strncmp(data + s, "VALUE", 5)) {
                     sscanf(data + s, "VALUE %*s %*d %d", &value_len);
                     state = DATA;
                   } else {
-                    // printf("%s\n",data +s);
+                    printf("fail: %s\n",data +s);
                     fail = true;
                     break;
                   }
                 } else if (state == DATA) {
-                  if(line_len != value_len) {
-                    fail = true;
-                    break;
-                  }
-                  state = END;
-                } else if (state == END) {
+                  // if(line_len != value_len) {
+                  //   printf("fail: llen: %d vlen: %d\n", line_len, value_len);
+                  //   fail = true;
+                  //   break;
+                  // }
                   if (!strcmp(data + s, "END")) {
-                    s = e + 2;
-                    break;
-                  } else if (!strncmp(data + s, "VALUE", 5)) {
-                    sscanf(data + s, "VALUE %*s %*d %d", &value_len);
-                    state = DATA;
-                  }
+                    state = END;
+                    // TODO(Farbod): Implement multiple get-key request support
+                  } else {}
                 }
+                // else if (state == END) {
+                //  if (!strcmp(data + s, "END")) {
+                //     s = e + 2;
+                //     break;
+                //   } else if (!strncmp(data + s, "VALUE", 5)) {
+                //     sscanf(data + s, "VALUE %*s %*d %d", &value_len);
+                //     state = DATA;
+                //   }
+                // }
                 // ...................
                 // next time start from here
                 s = e + 2;
@@ -200,9 +202,9 @@ void UDPConnection::read_callback()
           Operation *op = op_queue.find(ntohs(udp_header->req_id));
 
           if (op) {
-
             now = get_time();
             op->end_time = now;
+            stats.rx_bytes += length;
             stats.log_get(*op);
             pop_op(op);
             if (fail)
@@ -298,7 +300,7 @@ void UDPConnection::issue_get(Operation &op)
     // reqval = string("get ");
     // reqval += op.key;
     // reqval += "\r\n";
-    // printf("%s\n", reqval.c_str());
+    // printf("req: %s, klen: %d\n", buf, keylen);
     // iov[1].iov_base = (void *)reqval.c_str();
     // iov[1].iov_len = reqval.size() + 1;
     iov[1].iov_base = buf;
@@ -312,6 +314,7 @@ void UDPConnection::issue_get(Operation &op)
   }
 
   stats.tx_bytes += l;
+  stats.issue_gets++;
 }
 
 void UDPConnection::retransmit(double now)
@@ -338,7 +341,8 @@ void UDPConnection::issue_something(Operation &op)
 
 void UDPConnection::issue_something(double now)
 {
-  string key = keygen->generate(lrand48() % options.records);
+  // string key = keygen->generate(lrand48() % options.records);
+  string key = keygen->generate(popularity->generate());
   issue_get(&key, now);
 }
 
@@ -433,4 +437,5 @@ UDPConnection::UDPConnection(struct event_base* base, string hostname, int port,
   iagen->set_lambda(options.lambda);
   auto keysize = createGenerator(options.keysize);
   keygen = new KeyGenerator(keysize, options.records);
+  popularity = createPopularityGenerator(options.popularity, options.records, options.permutation_seed);
 }

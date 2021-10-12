@@ -37,6 +37,7 @@ private:
 	int fd;
 	uint16_t req_id = 0;
 	KeyGenerator *keygen;
+	Generator *popularity;
 	double next_time;
 	Generator *iagen;
 	options_t options;
