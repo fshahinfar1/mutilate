@@ -135,7 +135,7 @@ void UDPConnection::read_callback()
           udp_header_t *udp_header = (udp_header_t *)buf;
           int data_len = length - sizeof(udp_header_t); // minus udp header size
           char *data = (char *) (udp_header + 1);
-          // printf("* %s\n", data);
+          // printf("* response:\n%s\n", data);
           assert(udp_header->seq_no == 0);
           assert(udp_header->datagrams == ntohs(1));
           assert(udp_header->reserved == 0);
@@ -148,7 +148,7 @@ void UDPConnection::read_callback()
           bool fail = false;
           int value_len = 0;
           while (s < data_len && !fail) {
-            // printf("%d %d\n", s, data_len);
+            // printf("%d/%d\n%s\n", s, data_len, (data + s));
             int e;
             for (e = s; e < data_len - 1; e++) {
               if (data[e] != '\r')
@@ -198,6 +198,7 @@ void UDPConnection::read_callback()
               // }
             }
           }
+	  // printf("Done\n");
 
           Operation *op = op_queue.find(ntohs(udp_header->req_id));
 
