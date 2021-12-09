@@ -112,9 +112,6 @@ void UDPConnection::read_callback()
       case IDLE:
         return;
       case WAITING_FOR_GET:
-        // Farobd: I added this if statement in order to have
-        // udp connection with ascii protocol (might not work
-        // correctly)
         length = read(fd, buf, sizeof(buf));
         if (length == -1 && errno == EAGAIN)
           return;
@@ -130,23 +127,36 @@ void UDPConnection::read_callback()
             pop_op(op);
           }
         } else {
-          // UDP is message oriented so whole response
-          // is received.
           udp_header_t *udp_header = (udp_header_t *)buf;
           int data_len = length - sizeof(udp_header_t); // minus udp header size
           char *data = (char *) (udp_header + 1);
           // printf("* response:\n%s\n", data);
-          assert(udp_header->seq_no == 0);
-          assert(udp_header->datagrams == ntohs(1));
+          // assert(udp_header->seq_no == 0);
+          // assert(udp_header->datagrams == ntohs(1));
+          int datagrams = ntohs(udp_header->datagrams);
+          int seq_no = ntohs(udp_header->seq_no);
+          assert(seq_no < datagrams);
           assert(udp_header->reserved == 0);
+          if (seq_no != datagrams - 1) {
+            // more messages to be received
+            /* printf("%d != %d\n", seq_no, datagrams - 1); */
+            break;
+          }
 
           int s = 0;
           const int VALUE = 0;
           const int DATA = 1;
           const int END = 2;
-          int state = VALUE;  
+          int state = VALUE;
           bool fail = false;
           int value_len = 0;
+
+          if (seq_no > 0) {
+            // It has hit the server (because multiple sequence
+            // has been sent)
+            goto skip_resp_parsing;
+          }
+
           while (s < data_len && !fail) {
             // printf("%d/%d\n%s\n", s, data_len, (data + s));
             int e;
@@ -154,8 +164,6 @@ void UDPConnection::read_callback()
               if (data[e] != '\r')
                 continue;
               if (data[e] == '\r' && data[e+1] == '\n') {
-                // int line_len = e - s;
-                // printf("line rate: %d state: %d\n", line_len, state);
                 // States .........
                 if (state == VALUE) {
                   if (!strncmp(data + s, "VALUE", 5)) {
@@ -177,31 +185,15 @@ void UDPConnection::read_callback()
                     // TODO(Farbod): Implement multiple get-key request support
                   } else {}
                 }
-                // else if (state == END) {
-                //  if (!strcmp(data + s, "END")) {
-                //     s = e + 2;
-                //     break;
-                //   } else if (!strncmp(data + s, "VALUE", 5)) {
-                //     sscanf(data + s, "VALUE %*s %*d %d", &value_len);
-                //     state = DATA;
-                //   }
-                // }
-                // ...................
-                // next time start from here
+                // next time start from after "\r\n"
                 s = e + 2;
                 break;
               }
-              // else if (buf[e] == '\r' && buf[e+1] != '\n') {
-              //   // BAD END OF LINE
-              //   printf("%s %d %d\n", buf + e, e, buf[e+1]);
-              //   assert(0); // should always fail
-              // }
             }
           }
-	  // printf("Done\n");
-
+skip_resp_parsing:
+          // printf("Done\n");
           Operation *op = op_queue.find(ntohs(udp_header->req_id));
-
           if (op) {
             now = get_time();
             op->end_time = now;
@@ -211,7 +203,7 @@ void UDPConnection::read_callback()
             if (fail)
               stats.get_misses++;
           } else {
-            //printf("fail: %d\n",(int)fail);
+            printf("fail: Operation not found\n");
           }
         }
         drive_write_machine(now);
