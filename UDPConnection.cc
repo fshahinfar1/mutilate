@@ -191,7 +191,7 @@ void UDPConnection::read_callback()
               s = e + 2;
               break;
             }
-            if (pre_s == s) {
+            if (!fail && pre_s == s) {
               printf("\nfail: deadlock state: %d %d/%d\n", state, s, data_len);
               for (int i = 0; i < data_len; i++) {
                 if (data[i] > 31 && data[i] < 127) {
