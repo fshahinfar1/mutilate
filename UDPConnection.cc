@@ -104,7 +104,7 @@ void UDPConnection::read_callback()
 {
   Operation *op;
   double now = 0;
-  char buf[2048];
+  char buf[1501];
   ssize_t length;
 
   while (1) {
@@ -112,7 +112,9 @@ void UDPConnection::read_callback()
       case IDLE:
         return;
       case WAITING_FOR_GET:
+        /* memset(buf, 0, 1501); */
         length = read(fd, buf, sizeof(buf));
+        buf[length] = 0;
         if (length == -1 && errno == EAGAIN)
           return;
         if (options.binary) {
@@ -130,7 +132,7 @@ void UDPConnection::read_callback()
           udp_header_t *udp_header = (udp_header_t *)buf;
           int data_len = length - sizeof(udp_header_t); // minus udp header size
           char *data = (char *) (udp_header + 1);
-          // printf("* response:\n%s\n", data);
+          /* printf("* response:\n%s\n", data); */
           // assert(udp_header->seq_no == 0);
           // assert(udp_header->datagrams == ntohs(1));
           int datagrams = ntohs(udp_header->datagrams);
@@ -144,6 +146,7 @@ void UDPConnection::read_callback()
           }
 
           int s = 0;
+          int pre_s = 0;
           const int VALUE = 0;
           const int DATA = 1;
           const int END = 2;
@@ -159,36 +162,54 @@ void UDPConnection::read_callback()
 
           while (s < data_len && !fail) {
             // printf("%d/%d\n%s\n", s, data_len, (data + s));
-            int e;
-            for (e = s; e < data_len - 1; e++) {
-              if (data[e] != '\r')
+            pre_s = s;
+            for (int e = s; e < data_len; e++) {
+              if (data[e] != '\n')
                 continue;
-              if (data[e] == '\r' && data[e+1] == '\n') {
-                // States .........
-                if (state == VALUE) {
-                  if (!strncmp(data + s, "VALUE", 5)) {
-                    sscanf(data + s, "VALUE %*s %*d %d", &value_len);
-                    state = DATA;
-                  } else {
-                    printf("fail: %s\n",data +s);
-                    fail = true;
-                    break;
-                  }
-                } else if (state == DATA) {
-                  // if(line_len != value_len) {
-                  //   printf("fail: llen: %d vlen: %d\n", line_len, value_len);
-                  //   fail = true;
-                  //   break;
-                  // }
-                  if (!strcmp(data + s, "END")) {
-                    state = END;
-                    // TODO(Farbod): Implement multiple get-key request support
-                  } else {}
+              // States .........
+              if (state == VALUE) {
+                if (!strncmp(data + s, "VALUE", 5)) {
+                  sscanf(data + s, "VALUE %*s %*d %d", &value_len);
+                  state = DATA;
+                } else {
+                  printf("fail: %s\n",data +s);
+                  fail = true;
+                  break;
                 }
-                // next time start from after "\r\n"
-                s = e + 2;
-                break;
+              } else if (state == DATA) {
+                // if(line_len != value_len) {
+                //   printf("fail: llen: %d vlen: %d\n", line_len, value_len);
+                //   fail = true;
+                //   break;
+                // }
+                if (!strcmp(data + s, "END")) {
+                  state = END;
+                  // TODO(Farbod): Implement multiple get-key request support
+                } else {}
               }
+              // next time start from after "\r\n"
+              s = e + 2;
+              break;
+            }
+            if (pre_s == s) {
+              printf("\nfail: deadlock state: %d %d/%d\n", state, s, data_len);
+              for (int i = 0; i < data_len; i++) {
+                if (data[i] > 31 && data[i] < 127) {
+                  putchar(data[i]);
+                } else if (data[i] == '\n') {
+                  putchar('\\');
+                  putchar('n');
+                  putchar('\n');
+                } else if (data[i] == '\r') {
+                  putchar('\\');
+                  putchar('r');
+                } else {
+                  printf(" 0x%x ", data[i]);
+                }
+              }
+              putchar('\n');
+              putchar('\n');
+              DIE("Parsing error\n");
             }
           }
 skip_resp_parsing:
