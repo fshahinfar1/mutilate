@@ -214,7 +214,8 @@ void UDPConnection::read_callback()
           }
 skip_resp_parsing:
           // printf("Done\n");
-          Operation *op = op_queue.find(ntohs(udp_header->req_id));
+          int reqid = ntohs(udp_header->req_id);
+          Operation *op = op_queue.find(reqid);
           if (op) {
             now = get_time();
             op->end_time = now;
@@ -223,8 +224,6 @@ skip_resp_parsing:
             pop_op(op);
             if (fail)
               stats.get_misses++;
-          } else {
-            printf("fail: Operation not found\n");
           }
         }
         drive_write_machine(now);
