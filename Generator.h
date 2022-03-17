@@ -8,6 +8,7 @@
 #define GENERATOR_H
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) > (b) ? (b) : (a))
 
 #include "config.h"
 
@@ -307,6 +308,7 @@ public:
     double U = (double) h / ULLONG_MAX;
     double G = g->generate(U);
     int keylen = MAX(round(G), floor(log10(max)) + 1);
+    keylen = MIN(keylen, 250); // memcached max key size is 250
     char key[256];
     snprintf(key, 256, "%0*" PRIu64, keylen, ind);
 
