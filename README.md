@@ -23,6 +23,30 @@ Building
     sudo apt-get install scons libevent-dev gengetopt libzmq3-dev
     scons
 
+**for building DPDK version:**
+
+1. Install DPDK
+
+    export DPDK_INSTALL_DIR="$HOME/dpdk-build/"
+    sudo apt update
+    sudo apt-get install -y meson ninja-build python3-pip python3-pyelftools
+    wget http://fast.dpdk.org/rel/dpdk-22.11.2.tar.xz
+    tar -xf dpdk-22.11.2.tar.xz
+    cd dpdk-stable-22.11.2/
+    meson build
+    cd build
+    meson configure --prefix $DPDK_INSTALL_DIR
+    ninja
+    ninja install
+    echo $DPDK_INSTALL_DIR/lib/x86_64-linux-gnu/ | sudo tee /etc/ld.so.conf.d/dpdk_libs.conf
+    sudo ldconfig
+    echo export PKG_CONFIG_PATH=$DPDK_INSTALL_DIR/lib/x86_64-linux-gnu/pkgconfig | tee -a ~/.bashrc
+
+2. Use scons to build
+
+    DPDK=/users/farbod/dpdk-build/ scons
+
+
 Basic Usage
 ===========
 

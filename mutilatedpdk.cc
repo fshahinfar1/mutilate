@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 	setvbuf(stdout, NULL, _IOLBF, 0);
 	init_random_stuff();
 
-	struct ether_addr my_mac;
+	struct rte_ether_addr my_mac;
 	parse_mac(args.my_mac_arg, &my_mac);
 
 	dpdk_init(args.cpu_core_arg, &my_mac, parse_ip(args.my_ip_arg));

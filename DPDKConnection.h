@@ -41,5 +41,5 @@ private:
 	uint32_t remaining;
 };
 
-void parse_mac(const char *str, struct ether_addr *res);
+void parse_mac(const char *str, struct rte_ether_addr *res);
 uint32_t parse_ip(const char *str);

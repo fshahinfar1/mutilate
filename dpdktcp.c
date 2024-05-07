@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
 
@@ -59,7 +60,7 @@ static struct pcb {
 	uint32_t sent_seq;
 	uint32_t recv_ack;
 	uint32_t acked;
-	struct ether_addr remote_mac;
+	struct rte_ether_addr remote_mac;
 	uint32_t remote_ip;
 	uint16_t local_port;
 	uint16_t remote_port;
@@ -69,21 +70,21 @@ static struct pcb {
 static int local_tcp_port_start;
 static int pcb_idx;
 static struct rte_mempool *mbuf_pool;
-static struct ether_addr local_mac;
+static struct rte_ether_addr local_mac;
 static uint32_t local_ip;
 
 static const struct rte_eth_conf port_conf_default = {
 	.rxmode = {
-		.hw_ip_checksum = 1,
-		.max_rx_pkt_len = ETHER_MAX_LEN
-	}
+		.offloads= RTE_ETH_TX_OFFLOAD_IPV4_CKSUM,
+		.max_lro_pkt_size = RTE_ETHER_MAX_LEN,
+	},
 };
 
 static void port_init(uint8_t port, struct rte_mempool *mbuf_pool)
 {
 	int ret;
 
-	assert(port < rte_eth_dev_count());
+	assert(port < rte_eth_dev_count_avail());
 
 	ret = rte_eth_dev_configure(port, 1, 1, &port_conf_default);
 	assert(ret == 0);
@@ -162,21 +163,21 @@ static uint16_t tcp_cksum(struct ipv4_hdr *ipv4_hdr, struct tcp_hdr *tcp_hdr, co
 
 static struct rte_mbuf *tx_prep(const struct pcb *pcb, size_t payload_len)
 {
-	struct ether_hdr *ether_hdr;
+	struct rte_ether_hdr *ether_hdr;
 	struct ipv4_hdr *ipv4_hdr;
 	struct rte_mbuf *mbuf;
 
 	mbuf = rte_pktmbuf_alloc(mbuf_pool);
-	mbuf->pkt_len = mbuf->data_len = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + sizeof(struct tcp_hdr) + payload_len;
+	mbuf->pkt_len = mbuf->data_len = sizeof(struct rte_ether_hdr) + sizeof(struct ipv4_hdr) + sizeof(struct tcp_hdr) + payload_len;
 	// TODO: FIXME checksum offload
 	// mbuf->ol_flags |= PKT_TX_IPV4 | PKT_TX_IP_CKSUM;
-	// mbuf->l2_len = sizeof(struct ether_hdr);
-	// mbuf->l3_len = sizeof(struct ipv4_hdr);
-	ether_hdr = rte_pktmbuf_mtod(mbuf, struct ether_hdr *);
+	// mbuf->l2_len = sizeof(struct rte_ether_hdr);
+	// mbuf->l3_len = sizeof(struct rte_ipv4_hdr);
+	ether_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
 	ipv4_hdr = (struct ipv4_hdr *)(ether_hdr + 1);
 
-	memcpy(&ether_hdr->d_addr, &pcb->remote_mac, sizeof(ether_hdr->d_addr));
-	memcpy(&ether_hdr->s_addr, &local_mac, sizeof(ether_hdr->s_addr));
+	memcpy(&ether_hdr->dst_addr, &pcb->remote_mac, sizeof(ether_hdr->dst_addr));
+	memcpy(&ether_hdr->src_addr, &local_mac, sizeof(ether_hdr->src_addr));
 	ether_hdr->ether_type = __builtin_bswap16(ETHER_TYPE_IPv4);
 
 	ipv4_hdr->header_len = 0x5;
@@ -198,7 +199,7 @@ static struct rte_mbuf *tx_prep(const struct pcb *pcb, size_t payload_len)
 
 static void tx_tcp_flags(struct pcb *pcb, uint8_t tcp_flags)
 {
-	struct ether_hdr *ether_hdr;
+	struct rte_ether_hdr *ether_hdr;
 	struct ipv4_hdr *ipv4_hdr;
 	struct tcp_hdr *tcp_hdr;
 	uint32_t *tcp_options;
@@ -206,7 +207,7 @@ static void tx_tcp_flags(struct pcb *pcb, uint8_t tcp_flags)
 	uint16_t count;
 
 	mbufs[0] = tx_prep(pcb, tcp_flags == TCP_SYN ? 8 : 0);
-	ether_hdr = rte_pktmbuf_mtod(mbufs[0], struct ether_hdr *);
+	ether_hdr = rte_pktmbuf_mtod(mbufs[0], struct rte_ether_hdr *);
 	ipv4_hdr = (struct ipv4_hdr *)(ether_hdr + 1);
 	tcp_hdr = (struct tcp_hdr *)(ipv4_hdr + 1);
 	tcp_options = (uint32_t *)(tcp_hdr + 1);
@@ -236,7 +237,7 @@ static void tx_tcp_flags(struct pcb *pcb, uint8_t tcp_flags)
 
 static void tcp_input(struct rte_mbuf *mbuf)
 {
-	struct ether_hdr *ether_hdr;
+	struct rte_ether_hdr *ether_hdr;
 	struct ipv4_hdr *ipv4_hdr;
 	struct tcp_hdr *tcp_hdr;
 	struct pcb *pcb;
@@ -244,7 +245,7 @@ static void tcp_input(struct rte_mbuf *mbuf)
 	size_t payload_len;
 	char *payload;
 
-	ether_hdr = rte_pktmbuf_mtod(mbuf, struct ether_hdr *);
+	ether_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
 	ipv4_hdr = (struct ipv4_hdr *)(ether_hdr + 1);
 	tcp_hdr = (struct tcp_hdr *)(ipv4_hdr + 1);
 
@@ -283,10 +284,10 @@ static void tcp_input(struct rte_mbuf *mbuf)
 
 static void eth_input(struct rte_mbuf *mbuf)
 {
-	struct ether_hdr *ether_hdr;
+	struct rte_ether_hdr *ether_hdr;
 	struct ipv4_hdr *ipv4_hdr;
 
-	ether_hdr = rte_pktmbuf_mtod(mbuf, struct ether_hdr *);
+	ether_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
 	ipv4_hdr = (struct ipv4_hdr *)(ether_hdr + 1);
 
 	if (ether_hdr->ether_type != __builtin_bswap16(ETHER_TYPE_IPv4))
@@ -300,11 +301,12 @@ static void eth_input(struct rte_mbuf *mbuf)
 	rte_pktmbuf_free(mbuf);
 }
 
-void dpdk_init(int core, const struct ether_addr *mac, uint32_t ip)
+void dpdk_init(int core, const struct rte_ether_addr *mac, uint32_t ip)
 {
 	int ret;
 	char corestr[8];
-	char *argv[] = { "./a.out", "-l", corestr, "--log-level", "4", "-m", "512" };
+	// TODO: PCI address is hard-coded, fix this
+	char *argv[] = { "./a.out", "-l", corestr, "--log-level", "4", "-m", "512" , "-a", "0000:03:00.1"};
 
 	sprintf(corestr, "%d", core);
 
@@ -355,7 +357,7 @@ struct pcb *tcp_create(void *arg)
 	return pcb;
 }
 
-void tcp_connect(struct pcb *pcb, const struct ether_addr *mac, uint32_t ip, uint16_t port)
+void tcp_connect(struct pcb *pcb, const struct rte_ether_addr *mac, uint32_t ip, uint16_t port)
 {
 	pcb->remote_mac = *mac;
 	pcb->remote_ip = ip;
@@ -368,7 +370,7 @@ void tcp_connect(struct pcb *pcb, const struct ether_addr *mac, uint32_t ip, uin
 
 static void __tcp_send(struct pcb *pcb, const void *data, size_t len)
 {
-	struct ether_hdr *ether_hdr;
+	struct rte_ether_hdr *ether_hdr;
 	struct ipv4_hdr *ipv4_hdr;
 	struct tcp_hdr *tcp_hdr;
 	char *payload;
@@ -378,7 +380,7 @@ static void __tcp_send(struct pcb *pcb, const void *data, size_t len)
 	assert(len <= MAX_TCP_PAYLOAD);
 
 	mbufs[0] = tx_prep(pcb, len);
-	ether_hdr = rte_pktmbuf_mtod(mbufs[0], struct ether_hdr *);
+	ether_hdr = rte_pktmbuf_mtod(mbufs[0], struct rte_ether_hdr *);
 	ipv4_hdr = (struct ipv4_hdr *)(ether_hdr + 1);
 	tcp_hdr = (struct tcp_hdr *)(ipv4_hdr + 1);
 	payload = (char *)(tcp_hdr + 1);

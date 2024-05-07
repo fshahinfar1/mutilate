@@ -11,3 +11,4 @@ cmdline.h
 gtest
 config.h
 tmp/
+tags

@@ -254,7 +254,7 @@ DPDKConnection::DPDKConnection(string hostname, int port, options_t options, boo
 {
 	pcb = tcp_create(this);
 
-	struct ether_addr remote_mac;
+	struct rte_ether_addr remote_mac;
 	parse_mac(args.server_mac_arg, &remote_mac);
 
 	tcp_connect(pcb, &remote_mac, parse_ip(hostname.c_str()), port);
@@ -282,7 +282,7 @@ void on_tcp_recv(void *arg, char *data, size_t len)
 	conn->read_callback(data, len);
 }
 
-void parse_mac(const char *str, struct ether_addr *res)
+void parse_mac(const char *str, struct rte_ether_addr *res)
 {
 	int ret;
 	ret = sscanf(str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &res->addr_bytes[0], &res->addr_bytes[1], &res->addr_bytes[2], &res->addr_bytes[3], &res->addr_bytes[4], &res->addr_bytes[5]);
