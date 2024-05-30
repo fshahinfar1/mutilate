@@ -4,12 +4,12 @@ set -e
 SERVER_HOST=192.168.200.101
 SERVER_PORT=11211
 # NOTE: Experiment duration in seconds
-TIME=60
+TIME=10
 
 LOCALHOST=`hostname`
 # NOTE: if REMOTEHOST is not set then it is not configured and REMOTECMD is not
 # executed
-REMOTEHOST=
+REMOTEHOST=$LOCALHOST
 # NOTE: RUNLOCAL can be `master` or `agent`. It decides if master or agent node
 # should run locally
 RUNLOCAL=master
@@ -18,8 +18,7 @@ MASTER_CMDLINE='./mutilateudp --records=1000000 --time=$TIME --qps=10000
 --keysize=fb_key --valuesize=fb_value --iadist=fb_ia --update=0
 --server=$SERVER_HOST:$SERVER_PORT --noload --threads=1
 --connections=4 --measure_connections=32
---measure_qps=2000 --binary'
-# --agent=$AGENT
+--measure_qps=2000 --binary --agent=$AGENT'
 
 if [ $RUNLOCAL == agent ]; then
 	AGENT=$LOCALHOST
