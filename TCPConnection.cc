@@ -408,6 +408,7 @@ void TCPConnection::read_callback() {
   size_t op_value_size = 0;
 
   double now;
+  unsigned int tmp;
 
   // Protocol processing loop.
 
@@ -602,7 +603,8 @@ void TCPConnection::read_callback() {
       loader_completed++;
       pop_op();
 
-      if ((loader_completed % (options.records / 10)) == 0)
+      tmp = options.records / 10;
+      if (tmp != 0 && (loader_completed % (tmp) == 0))
         V("Loading database: %d%% done.", 100 * loader_completed /options.records);
       if (loader_completed == options.records) {
         D("Finished loading.");
