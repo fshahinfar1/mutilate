@@ -91,6 +91,7 @@ Operation *UDPConnection::consume_udp_binary_response(char *data, size_t length)
 
   size_t targetLen = sizeof(udp_header_t) + 24 + ntohl(h->body_len);
   assert(length == targetLen);
+  op->value_size = h->body_len;
 
   // if something other than success, count it as a miss
   if (op && h->status)
@@ -102,7 +103,7 @@ Operation *UDPConnection::consume_udp_binary_response(char *data, size_t length)
 
 void UDPConnection::read_callback()
 {
-  Operation *op;
+  Operation *op = nullptr;
   double now = 0;
   char buf[1501];
   ssize_t length;
@@ -220,10 +221,13 @@ skip_resp_parsing:
             now = get_time();
             op->end_time = now;
             stats.rx_bytes += length;
+            if (fail) {
+              stats.get_misses++;
+            } else {
+              op->value_size = value_len;
+            }
             stats.log_get(*op);
             pop_op(op);
-            if (fail)
-              stats.get_misses++;
           }
         }
         drive_write_machine(now);

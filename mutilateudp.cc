@@ -192,7 +192,7 @@ int main(int argc, char **argv)
 	if (args.quiet_given) log_level = QUIET;
 
 	double boot_time = get_time();
-	srand48(boot_time * 1000000);
+	srand48(127 * 1000000);
 
 	if (args.server_given) {
 		// Farbod: I need to implement non-binary protocol support for upd
@@ -229,7 +229,7 @@ static void assert_cmdline(void)
 	assert(!args.quiet_given);
 	assert(!args.report_stats_given);
 	assert(!args.roundrobin_given);
-	assert(!args.save_given);
+	/* assert(!args.save_given); */
 	assert(!args.scan_given);
 	assert(!args.scan_search_given);
 	assert(!args.search_given);
