@@ -103,6 +103,11 @@ static Generator *_createPopularityGenerator(std::string str, long records, long
 
   if      (strcasestr(str.c_str(), "uniform")) ret = new Uniform(records);
   else if (strcasestr(str.c_str(), "zipf")) ret = new Zipf(records, a1, permutation_seed);
+  else if (strcasestr(str.c_str(), "const")) {
+    int i1 = s1 ? atoi(s1) : 0;
+    printf("using a fixed key %d\n", i1);
+    ret = new Fixed(i1);
+  }
   else DIE("Unable to create Request Generator '%s'", str.c_str());
 
   delete[] s_copy;
