@@ -16,6 +16,8 @@
 #include "binary_protocol.h"
 #include "util.h"
 
+#define MAX_VALUE_SIZE 1200
+
 TCPConnection::TCPConnection(struct event_base* _base, struct evdns_base* _evdns,
                        string _hostname, string _port, options_t _options,
                        int _src_port, bool sampling) :
@@ -166,6 +168,8 @@ void TCPConnection::issue_set(const char* key, const char* value, int length,
   Operation op;
   int l;
   uint16_t keylen = strlen(key);
+
+  length = length % MAX_VALUE_SIZE;
 
 #if HAVE_CLOCK_GETTIME
   op.start_time = get_time_accurate();

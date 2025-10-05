@@ -138,7 +138,11 @@ void UDPConnection::read_callback()
           // assert(udp_header->datagrams == ntohs(1));
           int datagrams = ntohs(udp_header->datagrams);
           int seq_no = ntohs(udp_header->seq_no);
-          assert(seq_no < datagrams);
+          if (seq_no >= datagrams) {
+            printf("seq no: %d, dgrams: %d\n", seq_no, datagrams);
+            assert(seq_no < datagrams);
+          }
+
           assert(udp_header->reserved == 0);
           if (seq_no != datagrams - 1) {
             // more messages to be received
